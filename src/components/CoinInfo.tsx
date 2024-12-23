@@ -16,7 +16,7 @@ export default function CoinInfo({ data }: { data: Data }) {
                 </p>
                 <p className="text-sm">
                     <strong className="font-semibold text-white">Description:</strong>
-                    <span className="text-gray-400 block mt-1"> {data.description.slice(0, 62)}</span>
+                    <span className="text-gray-400 block mt-1"> {data.description ? data.description.slice(0, 62) : ""}</span>
                 </p>
                 <div className="mt-3 flex gap-3 overflow-hidden">
                     {data.website && (
