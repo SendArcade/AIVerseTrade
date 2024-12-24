@@ -6,7 +6,7 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between py-4 px-6 bg-black shadow-md border-b border-gray-800">
       {/* Logo Section */}
-      <Link href="/" className="text-white text-2xl font-bold hover:text-gray-400">
+      <Link href="http://aiverse.wtf/" className="text-white text-2xl font-bold hover:text-gray-400">
         AI Verse
       </Link>
 
