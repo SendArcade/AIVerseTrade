@@ -2,6 +2,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { BondingCurveAccount } from 'pumpdotfun-sdk';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import { strict } from 'assert';
 
 dotenv.config();
 
@@ -76,8 +77,11 @@ async function getPriceAndMarketCap(mintAddress) {
                 const totalSupplyRaw = bondingCurveAccount.tokenTotalSupply;
                 const marketCapUSDC = (Number(totalSupplyRaw) / 10 ** DECIMALS) * price;
                 const marketCapInSOL = Math.floor(Number(marketCapUSDC / 200));
+                const solPrice = await fetch("https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112");
+                const solPriceJson = await solPrice.json();
+                const Mcap = parseFloat(solPriceJson.data.So11111111111111111111111111111111111111112.price) * marketCapInSOL;
 
-                return { price: price.toFixed(9), marketCap: marketCapInSOL.toFixed(9) };
+                return { price: price.toFixed(9), marketCap: Mcap.toFixed(0) };
             }
         }
 
@@ -93,9 +97,13 @@ async function getPriceAndMarketCap(mintAddress) {
         const marketCapInLamports = (totalSupplyRaw * pricePerTokenInLamports) / (10n ** BigInt(DECIMALS));
         const marketCapInSOL = Number(marketCapInLamports) / 10 ** 9;
 
+        const solPrice = await fetch("https://api.jup.ag/price/v2?ids=So11111111111111111111111111111111111111112");
+        const solPriceJson = await solPrice.json();
+        const Mcap = parseFloat(solPriceJson.data.So11111111111111111111111111111111111111112.price) * marketCapInSOL;
+
         return {
             price: pricePerTokenInSOL.toFixed(9),
-            marketCap: marketCapInSOL.toFixed(9)
+            marketCap: Mcap.toFixed(0)
         };
     } catch (error) {
         console.error(`Error fetching price and market cap for ${mintAddress}:`, error.message);

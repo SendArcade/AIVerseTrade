@@ -2,7 +2,7 @@ export const GET = async (req, { params }) => {
     try {
         const { address } = await params;
 
-        const response = await fetch(`https://api.live24.fun/api/tokens/candlesticks/${address}/?timeframe=15&limit=1000`, {
+        const response = await fetch(`https:///api/tokens/candlesticks/${address}/?timeframe=15&limit=1000`, {
             "headers": {
                 "accept": "application/json",
             },

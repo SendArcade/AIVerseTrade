@@ -10,6 +10,7 @@ import { Data, TokenPageProps } from "@/utils/types";
 
 export default function TokenPage({ params }: TokenPageProps) {
     const [data, setData] = useState<Data | null>(null);
+    const [onRaydium, setonRaydium] = useState<boolean>(false);
     const unwrappedParams = use(params); // Unwrap the `params` Promise.
     const address = unwrappedParams.address;
 
@@ -26,6 +27,26 @@ export default function TokenPage({ params }: TokenPageProps) {
             }
         };
 
+        const checkIfTokenIsOnRaydium = async (address: string) => {
+            try {
+                const raydiumApiUrl = `https://api-v3.raydium.io/mint/ids?mints=${address}`;
+                const response = await fetch(raydiumApiUrl);
+                const result = await response.json();
+    
+                if (result.success && result.data && Array.isArray(result.data) && result.data[0] !== null) {
+                    setonRaydium(true);
+                    return;
+                }
+                setonRaydium(false);
+                return;
+            } catch (error) {
+                setonRaydium(false);
+                console.error('Error checking token on Raydium');
+                return;
+            }
+        }
+
+        checkIfTokenIsOnRaydium(address);
         fetchAddress();
     }, [address]);
 
@@ -37,7 +58,9 @@ export default function TokenPage({ params }: TokenPageProps) {
         );
     }
 
+
     const symbol = data.symbol as string;
+    console.log("raydium "  + onRaydium);
 
     return (
         <div className="min-h-screen bg-black text-white font-sans">
@@ -48,14 +71,14 @@ export default function TokenPage({ params }: TokenPageProps) {
                 <section className="flex flex-col lg:flex-row space-y-6 lg:space-y-0 lg:space-x-6">
                     {/* Chart Section */}
                     <div className="flex-1 bg-black rounded-lg p-6 shadow-lg h-full">
-                        <Chart tokenAddress={address} symbol={symbol} marketCap="" />
+                        <Chart tokenAddress={address} symbol={symbol} marketCap="" onRaydium={onRaydium}/>
                     </div>
 
                     {/* Trade and Coin Info Section */}
                     <div className="flex flex-col gap-6 lg:gap-8 w-full lg:w-[35%] h-full py-14 lg:mt-16">
                         {/* Trade Panel */}
                         <div className="w-full bg-black rounded-lg px-6 shadow-lg flex-1 pt-6">
-                            <TradePanel address={address} symbol={symbol} />
+                            <TradePanel address={address} symbol={symbol} onRaydium={onRaydium}/>
                         </div>
                         <span className="text-xs sm:text-sm truncate w-full bg-black rounded-lg px-6 py-0 shadow-lg flex-1">
                             <strong>CA:</strong>{" "}

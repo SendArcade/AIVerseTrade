@@ -53,7 +53,7 @@ async function uploadMetadata(
 }
 
 async function launchToken(deployerPrivatekey, name, symbol, uri) {
-    console.log(deployerPrivatekey,name,symbol,uri);
+    console.log(deployerPrivatekey, name, symbol, uri);
     const connection = new Connection(
         "https://mainnet.helius-rpc.com/?api-key=5335ab3f-9c1d-413b-ab8b-da4069b18971",
         'confirmed'
@@ -142,7 +142,7 @@ async function launchToken(deployerPrivatekey, name, symbol, uri) {
     console.log(`Tx confirmed with signature: ${signature}`)
     console.log(`PUMP FUN: https://pump.fun/coin/${mintPK}`)
 
-    return {signature, mintPK};
+    return { signature, mintPK };
 }
 
 export const POST = async (req, { params }) => {
@@ -163,10 +163,10 @@ export const POST = async (req, { params }) => {
         const { metadataUri } = await uploadMetadata(tokenName, tokenTicker, description, imageUrl, options);
         console.log("Metadata URI:", metadataUri);
 
-        const {signature, mintPK}= await launchToken(privatekey, tokenName, tokenTicker, metadataUri);
+        const { signature, mintPK } = await launchToken(privatekey, tokenName, tokenTicker, metadataUri);
 
         return new Response(
-            JSON.stringify({signature, mintPK}),
+            JSON.stringify({ signature, mintPK }),
             { status: 200, headers: { "Content-Type": "application/json" } }
         );
     } catch (error) {

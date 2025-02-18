@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Transaction, Connection, PublicKey } from "@solana/web3.js";
+import { Transaction, Connection, PublicKey, VersionedTransaction } from "@solana/web3.js";
 import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
+import SlippagePopUp from "./SlippagePopUp";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -11,9 +12,10 @@ dotenv.config();
 interface TradePanelProps {
   address: string;
   symbol: string;
+  onRaydium: boolean;
 }
 
-export default function TradePanel({ address, symbol }: TradePanelProps) {
+export default function TradePanel({ address, symbol, onRaydium }: TradePanelProps) {
   const [mode, setMode] = useState<"buy" | "sell">("buy");
   const [sol, setSol] = useState(0.00); // Default SOL input
   const [loading, setLoading] = useState(false);
@@ -48,11 +50,57 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
   }, [address]);
 
   useEffect(() => {
-    setStash((sol / priceData.priceN).toFixed(2));
+    async function getSwapQuote(address: string, amountIn: string) {
+      const url = `https://transaction-v1.raydium.io/compute/swap-base-in?inputMint=So11111111111111111111111111111111111111112&outputMint=${address}&amount=${amountIn}&slippageBps=50&txVersion=V0`;
+      console.log(url);
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch swap quote: ${await response.text()}`);
+      }
+
+      return await response.json();
+    }
+    const set_buy = async () => {
+      if (onRaydium) {
+        // Handle the case when token is on Raydium
+        const response = await getSwapQuote(address, (sol * 1000000000).toFixed(0));
+        console.log(response);
+        const sta = parseFloat(response.data.outputAmount) / 1000000;
+        setStash(sta.toFixed(2));
+      } else {
+        setStash((sol / priceData.priceN).toFixed(2));
+      }
+    };
+
+    set_buy();
   }, [sol, priceData]);
 
   useEffect(() => {
-    setSolSell((stashSell * priceData.priceN).toFixed(2));
+    async function getSwapQuote(address: string, amountIn: string) {
+      const url = `https://transaction-v1.raydium.io/compute/swap-base-in?inputMint=${address}&outputMint=So11111111111111111111111111111111111111112&amount=${amountIn}&slippageBps=50&txVersion=V0`;
+      console.log(url);
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch swap quote: ${await response.text()}`);
+      }
+
+      return await response.json();
+    }
+    const set_sell = async () => {
+      if (onRaydium) {
+        // Handle the case when token is on Raydium
+        const response = await getSwapQuote(address, (stashSell * 1000000).toFixed(0));
+        console.log(response);
+        const sta = parseFloat(response.data.outputAmount) / 1000000000;
+        setSolSell(sta.toFixed(2));
+      } else {
+        setSolSell((stashSell * priceData.priceN).toFixed(2));
+      }
+    };
+
+    set_sell();
   }, [stashSell, priceData]);
 
   const handleBuyTrade = async () => {
@@ -86,13 +134,21 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
       if (response.ok) {
         const base64Tx = await response.json();
         const transactionBuffer = Buffer.from(base64Tx.base64Tx, "base64");
-        const transaction = Transaction.from(transactionBuffer);
+        let transaction;
+
+        try {
+          // Attempt to deserialize as a versioned transaction
+          transaction = VersionedTransaction.deserialize(transactionBuffer);
+        } catch (err) {
+          // If error occurs, treat it as a non-versioned transaction
+          transaction = Transaction.from(transactionBuffer);
+        }
 
         const signedTransaction = await signTransaction(transaction);
 
         // Initialize the connection
         const connection = new Connection(
-          "https://mainnet.helius-rpc.com/?api-key=5335ab3f-9c1d-413b-ab8b-da4069b18971",
+          "https://mainnet.helius-rpc.com/?api-key=6c6eddf0-9d8e-491c-a285-ee4d869d2b8a",
           "confirmed"
         );
         const txId = await connection.sendRawTransaction(signedTransaction.serialize());
@@ -138,13 +194,21 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
       if (response.ok) {
         const base64Tx = await response.json();
         const transactionBuffer = Buffer.from(base64Tx.base64Tx, "base64");
-        const transaction = Transaction.from(transactionBuffer);
+        let transaction;
+
+        try {
+          // Attempt to deserialize as a versioned transaction
+          transaction = VersionedTransaction.deserialize(transactionBuffer);
+        } catch (err) {
+          // If error occurs, treat it as a non-versioned transaction
+          transaction = Transaction.from(transactionBuffer);
+        }
 
         const signedTransaction = await signTransaction(transaction);
 
         // Initialize the connection
         const connection = new Connection(
-          "https://mainnet.helius-rpc.com/?api-key=5335ab3f-9c1d-413b-ab8b-da4069b18971",
+          "https://mainnet.helius-rpc.com/?api-key=6c6eddf0-9d8e-491c-a285-ee4d869d2b8a",
           "confirmed"
         );
         const txId = await connection.sendRawTransaction(signedTransaction.serialize());
@@ -165,7 +229,7 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
 
       // Initialize the connection
       const connection = new Connection(
-        "https://mainnet.helius-rpc.com/?api-key=5335ab3f-9c1d-413b-ab8b-da4069b18971",
+        "https://mainnet.helius-rpc.com/?api-key=6c6eddf0-9d8e-491c-a285-ee4d869d2b8a",
         "confirmed"
       );
 
@@ -191,7 +255,7 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
       const tokenBalance = await fetchTokenBalance();
 
       // Calculate the percentage of the balance
-      const calculatedValue = ((percentage / 100) * tokenBalance).toFixed(2);
+      const calculatedValue = ((((percentage / 100) * tokenBalance)) - 0.01).toFixed(2);
 
       // Update the stashSell state with the calculated value
       setStashSell(parseFloat(calculatedValue));
@@ -224,7 +288,11 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
 
       {/* Input and Output */}
       <div>
-        <label className="block text-gray-400">From {mode === "buy" ? "SOL" : symbol}:</label>
+        <div className="flex items-center justify-between">
+          <label className="block text-gray-400">From {mode === "buy" ? "SOL" : symbol}:</label>
+          <SlippagePopUp />
+        </div>
+
         <input
           type="number"
           value={mode === "buy" ? sol : stashSell}
@@ -235,16 +303,16 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
         {/* Buttons for setting predefined values */}
         <div className="flex flex-start mt-2 space-x-2">
           {mode === "buy"
-            ? [0.001, 0.01, 0.1, 1].map((value) => (
+            ? (onRaydium ? [0, 1, 5, 10] : [0, 0.01, 0.1, 1]).map((value) => (
               <button
                 key={value}
                 onClick={() => setSol(value)}
                 className="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded"
               >
-                {value} Sol
+                {value === 0 ? "reset" : value + " Sol"}
               </button>
             ))
-            : [25, 50, 75, 100].map((percentage) => (
+            : [0, 25, 50, 75, 100].map((percentage) => (
               <button
                 key={percentage}
                 onClick={() =>
@@ -252,7 +320,7 @@ export default function TradePanel({ address, symbol }: TradePanelProps) {
                 }
                 className="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs rounded"
               >
-                {percentage}%
+                {percentage === 0 ? "reset" : percentage + "%"}
               </button>
             ))}
         </div>

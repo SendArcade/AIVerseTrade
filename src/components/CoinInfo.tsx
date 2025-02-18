@@ -5,17 +5,17 @@ export default function CoinInfo({ data }: { data: Data }) {
     return (
         <div className="text-gray-300 flex flex-col lg:flex-row items-center lg:items-start lg:space-x-8 space-y-6 lg:space-y-0 h-auto pb-0">
             {/* Left Side: Info */}
-            <div className="lg:w-2/3 w-full space-y-2 flex-grow overflow-y-auto">
+            <div className="lg:w-2/3 w-full space-y-2 flex-grow overflow-y-auto overflow-hidden">
                 <p className="text-sm">
                     <strong className="font-semibold text-white">Token Name:</strong>
-                    <span className="text-green-400"> {data.name.slice(0, 15)}</span>
+                    <span className="text-green-400"> {data.name ? data.name.slice(0, 15) : ""}</span>
                 </p>
                 <p className="text-sm">
                     <strong className="font-semibold text-white">Ticker:</strong>
-                    <span className="text-green-400"> {data.symbol.slice(0, 15)}</span>
+                    <span className="text-green-400"> {data.symbol ? data.symbol.slice(0, 15) : ""}</span>
                 </p>
                 <p className="text-sm">
-                    <strong className="font-semibold text-white">Description:</strong>
+                    <strong className="font-semibold text-white">{data.description ? "Description:" : ""}</strong>
                     <span className="text-gray-400 block mt-1"> {data.description ? data.description.slice(0, 62) : ""}</span>
                 </p>
                 <div className="mt-3 flex gap-3 overflow-hidden">
